@@ -22,17 +22,21 @@ def load_images(images_fp: List[str]) -> np.array:
 
     return np.array(imgs)
 
-def load_mesh(fp: str) -> o3d.geometry.TriangleMesh:
+def load_mesh(fp: str = None) -> o3d.geometry.TriangleMesh:
     """Load a mesh from filepath.
 
     Args:
-        fp (str): file path of mesh, must be .ply
+        fp (str): file path of mesh, must be .ply. If None, then load Armadillo.
         num_points (int, optional): number of points to sample. Defaults to 500.
 
     Returns:
         o3d.geometry.LineSet: LineSet wireframe with just the points.
     """
-    mesh = o3d.io.read_triangle_mesh(fp)
+    if fp is not None:
+        mesh = o3d.io.read_triangle_mesh(fp)
+    else:
+        armadillo_mesh = o3d.data.ArmadilloMesh()
+        mesh = o3d.io.read_triangle_mesh(armadillo_mesh.path)
     return mesh
 
 
@@ -55,6 +59,29 @@ def draw_line(wf: o3d.geometry.LineSet, i: int, j: int) -> None:
     """
     assert 0 <= i < len(wf.points) and 0 <= j < len(wf.points)
     wf.lines.append([i, j])
+
+
+def extrinsics2lookat(extrinsics: np.array) -> List:
+    """Convert 4x4 extrinsics matrix to look_at form becaues OffscreenRenderer doesn't support regular ol' extrinsics matrices??
+
+    Args:
+        extrinsics (np.array): shape (4, 4) extrinsics matrix
+
+    Returns:
+        List: list of [center, eye, up] vectors
+    """
+    print(extrinsics)
+    R = extrinsics[..., :-1, :-1]
+    t = extrinsics[..., :-1, -1]
+    print(R)
+    print(t)
+    # eye = 3D global location of the camera
+    eye = t
+    # center = 3D global location camera is pointed at = w2c_translation + R.inverse @ camera_z-axis
+    center = t + np.linalg.inv(R) @ np.array([0., 0., 1.])
+    # up = unit vector representing which xyz is the camera's up direction
+    up = [0., 1., 0.]
+    return [center, eye, up]
 
 
 def render(renderers: List[o3d.visualization.rendering.OffscreenRenderer]) -> np.array:
@@ -82,4 +109,4 @@ if __name__ == "__main__":
     # for i in range(0, len(wf.points)):
     #     for j in range(i, len(wf.points)):
     #         draw_line(wf, i, j)
-    o3d.visualization.draw_geometries([wf])
+    o3d.visualization.draw_geometries([wf], width=512, height=512)
