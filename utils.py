@@ -69,7 +69,7 @@ def render(renderers: List[o3d.visualization.rendering.OffscreenRenderer]) -> np
 
     images = []
     for r in renderers:
-        img = r.render_to_image()
+        img = np.array(r.render_to_image())
         images.append(img)
     return np.array(images)
 
