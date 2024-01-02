@@ -22,7 +22,7 @@ def load_images(images_fp: List[str]) -> np.array:
 
     return np.array(imgs)
 
-def load_mesh(fp: str, num_points: int = 500) -> o3d.geometry.LineSet:
+def load_mesh(fp: str) -> o3d.geometry.TriangleMesh:
     """Load a mesh from filepath.
 
     Args:
@@ -33,8 +33,10 @@ def load_mesh(fp: str, num_points: int = 500) -> o3d.geometry.LineSet:
         o3d.geometry.LineSet: LineSet wireframe with just the points.
     """
     mesh = o3d.io.read_triangle_mesh(fp)
+    return mesh
 
-    # convert mesh to point cloud
+
+def mesh2wf(mesh: o3d.geometry.TriangleMesh, num_points: int = 500) -> o3d.geometry.LineSet:
     pcd = mesh.sample_points_uniformly(number_of_points=num_points)
     wireframe_pcd = o3d.geometry.LineSet()
     # convert point cloud to LineSet with no lines
