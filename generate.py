@@ -3,20 +3,20 @@ from typing import List
 import open3d as o3d
 import cv2 as cv
 
-def optimize(
+
+def visualize(
         images_fp: List[str],
-        mesh: str = None,
-        steps: int = 500,
-        num_points: int = 500,
-        ) -> o3d.geometry.LineSet:
+        mesh: str = None
+        ):
     images = load_images(images_fp)
     mtl = o3d.visualization.rendering.MaterialRecord()
     mtl.base_color = [1.0, 0.0, 0.0, 1.0]  # RGBA
     mtl.shader = "defaultUnlit"
-    wf = load_mesh(mesh)
+    wf = mesh2wf(load_mesh(mesh))
     renderers = []
 
     # TODO: add interactive stuff here to allow user to select their own camera views. Right now it's a hardcoded json
+    save_view_point(wf, "camera_params/save_view_test_1.json", width=512, height=512)
 
     for _ in range(len(images)):
         # create new OfflineRenderer for each image
@@ -37,6 +37,6 @@ def optimize(
 
 
 if __name__ == "__main__":
-    optimize(images_fp=["data/bunny.png"],
+    visualize(images_fp=["data/bunny.png"],
              mesh=None,
              )
