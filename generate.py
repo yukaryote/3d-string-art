@@ -20,10 +20,12 @@ def optimize(
 
     for _ in range(len(images)):
         # create new OfflineRenderer for each image
-        camera = o3d.io.read_pinhole_camera_parameters("camera_params/armadillo.json")
-        center, eye, up = extrinsics2lookat(np.array(camera.extrinsic))
-        renderer = o3d.visualization.rendering.OffscreenRenderer(camera.intrinsic.width, camera.intrinsic.height)
-        renderer.scene.camera.look_at(center, eye, up)
+        camera = o3d.io.read_pinhole_camera_parameters("camera_params/armadillo_512.json")
+        intrinsics, extrinsics = np.array(camera.intrinsic.intrinsic_matrix), np.array(camera.extrinsic)
+        width, height = camera.intrinsic.width, camera.intrinsic.height
+        # center, eye, up = extrinsics2lookat(np.array(camera.extrinsic)) LOL THEY DO TAKE IN EXTRINSICS NVM
+        renderer = o3d.visualization.rendering.OffscreenRenderer(width, height)
+        renderer.setup_camera(intrinsics, extrinsics, width, height)
         renderer.scene.add_geometry("wf", wf, mtl)
         renderers.append(renderer)
 

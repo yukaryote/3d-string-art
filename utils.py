@@ -27,7 +27,6 @@ def load_mesh(fp: str = None) -> o3d.geometry.TriangleMesh:
 
     Args:
         fp (str): file path of mesh, must be .ply. If None, then load Armadillo.
-        num_points (int, optional): number of points to sample. Defaults to 500.
 
     Returns:
         o3d.geometry.LineSet: LineSet wireframe with just the points.
@@ -41,6 +40,15 @@ def load_mesh(fp: str = None) -> o3d.geometry.TriangleMesh:
 
 
 def mesh2wf(mesh: o3d.geometry.TriangleMesh, num_points: int = 500) -> o3d.geometry.LineSet:
+    """Convert mesh to wireframe
+
+    Args:
+        mesh (o3d.geometry.TriangleMesh): 
+        num_points (int, optional): _description_. Defaults to 500.
+
+    Returns:
+        o3d.geometry.LineSet: _description_
+    """
     pcd = mesh.sample_points_uniformly(number_of_points=num_points)
     wireframe_pcd = o3d.geometry.LineSet()
     # convert point cloud to LineSet with no lines
@@ -70,11 +78,8 @@ def extrinsics2lookat(extrinsics: np.array) -> List:
     Returns:
         List: list of [center, eye, up] vectors
     """
-    print(extrinsics)
     R = extrinsics[..., :-1, :-1]
     t = extrinsics[..., :-1, -1]
-    print(R)
-    print(t)
     # eye = 3D global location of the camera
     eye = t
     # center = 3D global location camera is pointed at = w2c_translation + R.inverse @ camera_z-axis
@@ -104,9 +109,7 @@ def render(renderers: List[o3d.visualization.rendering.OffscreenRenderer]) -> np
 
 
 if __name__ == "__main__":
-    wf = load_mesh("data/sphere.ply")
+    # wf = load_mesh("data/sphere.ply")
+    wf = load_mesh()
 
-    # for i in range(0, len(wf.points)):
-    #     for j in range(i, len(wf.points)):
-    #         draw_line(wf, i, j)
-    o3d.visualization.draw_geometries([wf], width=512, height=512)
+    o3d.visualization.draw_geometries([wf], width=512, height=512, left=0, top=0)
