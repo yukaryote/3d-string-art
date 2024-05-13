@@ -146,7 +146,6 @@ def render(renderers: List[o3d.visualization.rendering.OffscreenRenderer]) -> np
     return np.array(images)
 
 
-<<<<<<< HEAD
 if __name__ == "__main__":
     # wf = load_frame("data/sphere.ply")
 
@@ -156,29 +155,3 @@ if __name__ == "__main__":
     #             draw_line(wf, i, j)
     # o3d.visualization.draw_geometries([wf])
     generate_ref_images("data/bun_zipper.ply")
-=======
-def save_view_point(pcd: o3d.geometry, filename: str, width: int, height: int) -> None:
-    """Saves camera params json when user presses 'k' in viz window.
-
-    Args:
-        pcd (o3d.geometry): geometry in the scene
-        filename (str): .json camera params filename
-        width (int): window width
-        height (int): window height
-    """
-    def save_json(vis):
-        param = vis.get_view_control().convert_to_pinhole_camera_parameters()
-        o3d.io.write_pinhole_camera_parameters(filename, param)
-        return False
-
-    key_to_callback = {ord("K"): save_json}
-
-    o3d.visualization.draw_geometries_with_key_callbacks([pcd], key_to_callback, width=512, height=512)
-
-
-if __name__ == "__main__":
-    # wf = load_mesh("data/sphere.ply")
-    wf = load_mesh()
-
-    save_view_point(wf, "camera_params/save_view_test_1.json", width=512, height=512)
->>>>>>> e11b1ff1eadbb41cfaea9e71bd19fdadb86ced7c
