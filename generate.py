@@ -10,7 +10,7 @@ def optimize(
         num_points: int = 500,
         ) -> o3d.geometry.LineSet:
     images = utils.load_images(images_fp)
-    wf = utils.load_mesh(mesh)
+    wf = utils.load_frame(mesh)
     renderers = []
 
     # TODO: add interactive stuff here to allow user to select their own camera views. Right now it's a hardcoded json
