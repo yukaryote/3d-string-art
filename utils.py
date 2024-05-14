@@ -47,24 +47,50 @@ def generate_ref_images(fp: str, width: int = 512, height: int = 512, num_views:
     """
     mesh_name = fp.split("/")[-1]
     mesh = load_mesh(os.path.join(fp, f"{mesh_name}.ply"))
+    radius = 5.0
+    eye = np.array([[radius, 0, radius]], dtype=np.float32).T  # Transposed to [3, 1]
+    center = np.array([[0, 0, 0]], dtype=np.float32).T  # Transposed to [3, 1]
+    up = np.array([[0, 1, 0]], dtype=np.float32).T  # Transposed to [3, 1]
 
+    # Configure the camera
     renderer = o3d.visualization.rendering.OffscreenRenderer(width, height)
     renderer.scene.set_background([1, 1, 1, 1])  # Set background to white
-    renderer.scene.add_geometry("mesh", mesh, o3d.visualization.rendering.MaterialRecord())
+    material = o3d.visualization.rendering.MaterialRecord()
+    material.base_color = [0, 0, 0, 1]  # Set color to black
+    renderer.scene.add_geometry("mesh", mesh, material)
     renderer.scene.set_lighting(renderer.scene.LightingProfile.NO_SHADOWS, (0, 0, 0))
-    renderer.setup_camera(fov=0, is_perspective=False)  # Set camera to orthographic
+    fov = 30.0  # between 5 and 90 degrees
+    aspect_ratio = width / height  # azimuth over elevation
+    near_plane = 0.1
+    far_plane = 50.0
+    fov_type = o3d.visualization.rendering.Camera.FovType.Vertical
+    renderer.scene.camera.set_projection(fov, aspect_ratio, near_plane, far_plane, fov_type)
     print("created offscreen renderer")
-    radius = 5
+
     images = []
 
     for k in range(num_views):
         # render at angles 2pi * k / num_views around camera
-        renderer.scene.camera.look_at(center=[0, 0, 0], eye=[radius * np.cos(2 * np.pi * k / num_views), 0, radius * np.sin(2 * np.pi * k / num_views)], up=[0, 1, 0])
-        camera_params = renderer.scene.camera.get_parameters()
-        camera_params_file = f"data/bunny/camera_params_view_{k}.json"
-        o3d.io.write_pinhole_camera_parameters(camera_params_file, camera_params)
-        img_o3d = render.render_to_image()
-        o3d.io.write_image("data/bunny/ref_view_{k}.jpeg", img_o3d, 9)
+        eye = np.array([[radius * np.cos(2 * np.pi * k / num_views), 0, radius * np.sin(2 * np.pi * k / num_views)]], dtype=np.float32).T
+        renderer.scene.camera.look_at(center, eye, up)
+
+        camera_params = o3d.camera.PinholeCameraParameters()
+        fx = width / (2 * np.tan(np.deg2rad(fov / 2)))
+        fy = fx
+        camera_params.intrinsic = o3d.camera.PinholeCameraIntrinsic(
+            width=width,  
+            height=height,
+            fx=fx,
+            fy=fy,
+            cx=width / 2,  
+            cy=height / 2  
+        )
+        camera_params.extrinsic = np.linalg.inv(renderer.scene.camera.get_model_matrix())
+        output_file_path = os.path.join(fp, f"camera_params_view_{k}.json")
+        o3d.io.write_pinhole_camera_parameters(output_file_path, camera_params)
+        
+        img_o3d = renderer.render_to_image()
+        o3d.io.write_image(os.path.join(fp, f"ref_view_{k}.png"), img_o3d, 9)
         img = np.array(img_o3d)
         images.append(img)
         cv.imshow("model", img)
