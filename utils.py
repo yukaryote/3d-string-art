@@ -1,3 +1,4 @@
+import os
 import open3d as o3d
 import numpy as np
 from typing import List
@@ -33,29 +34,43 @@ def load_mesh(fp: str):
     return mesh
 
 
-def generate_ref_images(fp: str, width: int = 512, height: int = 512, num_views: int = 5):
+def generate_ref_images(fp: str, width: int = 512, height: int = 512, num_views: int = 5) -> np.array:
     """Generate reference images of a mesh as input to optimization. 
     The reference images are taken at uniform angles around the yaw axis of the object.
     Two additional reference images are taken from the top and bottom.
     So the total number of images outputted is num_views + 2.
 
     Args:
+        fp (str): path to the reference mesh
+        width, height (int, optional): width and height of the resulting image
         num_views (int, optional): number of reference images to generate from the yaw axis. Defaults to 5.
     """
-    renderers = []
-    model = load_mesh(fp)
+    mesh_name = fp.split("/")[-1]
+    mesh = load_mesh(os.path.join(fp, f"{mesh_name}.ply"))
+
+    renderer = o3d.visualization.rendering.OffscreenRenderer(width, height)
+    renderer.scene.set_background([1, 1, 1, 1])  # Set background to white
+    renderer.scene.add_geometry("mesh", mesh, o3d.visualization.rendering.MaterialRecord())
+    renderer.scene.set_lighting(renderer.scene.LightingProfile.NO_SHADOWS, (0, 0, 0))
+    renderer.setup_camera(fov=0, is_perspective=False)  # Set camera to orthographic
+    print("created offscreen renderer")
+    radius = 5
+    images = []
+
     for k in range(num_views):
-        renderer = o3d.visualization.rendering.OffscreenRenderer(width, height)
-        renderer.scene.set_background([1, 1, 1, 1])  # Set background to white
-        renderer.scene.add_geometry("model", model)
-        renderer.scene.set_lighting(render.scene.LightingProfile.NO_SHADOWS, (0, 0, 0))
-        # render at angle 2pi*k/num_views about y-axis
-        renderer.scene.camera.look_at(center=[0, 0, 0], eye=[np.cos(2 * np.pi * k / num_views), 0, np.sin(2 * np.pi * k / num_views)], up=[0, 1, 0])
+        # render at angles 2pi * k / num_views around camera
+        renderer.scene.camera.look_at(center=[0, 0, 0], eye=[radius * np.cos(2 * np.pi * k / num_views), 0, radius * np.sin(2 * np.pi * k / num_views)], up=[0, 1, 0])
+        camera_params = renderer.scene.camera.get_parameters()
+        camera_params_file = f"data/bunny/camera_params_view_{k}.json"
+        o3d.io.write_pinhole_camera_parameters(camera_params_file, camera_params)
         img_o3d = render.render_to_image()
-        o3d.io.write_image("mtest2.jpeg", img_o3d, 9)
+        o3d.io.write_image("data/bunny/ref_view_{k}.jpeg", img_o3d, 9)
         img = np.array(img_o3d)
+        images.append(img)
         cv.imshow("model", img)
         cv.waitKey(1)
+    return np.array(images)
+
 
 def load_frame(fp: str, num_points: int = 500) -> o3d.geometry.LineSet:
     """Load a frame from filepath to connect strings to.
@@ -117,4 +132,4 @@ if __name__ == "__main__":
     #         if np.random.rand() < 0.01:
     #             draw_line(wf, i, j)
     # o3d.visualization.draw_geometries([wf])
-    generate_ref_images("data/bun_zipper.ply")
+    generate_ref_images("data/bunny")
